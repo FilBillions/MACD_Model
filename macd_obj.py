@@ -54,7 +54,6 @@ class MACDTable(Table):
         # Model return
         self.df['MACD Model Return'] = self.df['Return'] * self.df['Signal']
 
-
         # Entry column for visualization
         self.df['Entry'] = self.df.Signal.diff()
 
@@ -71,23 +70,51 @@ class MACDTable(Table):
         # Formatting the table
         self.df = round((self.df[['Day Count', 'Open', 'High', 'Low', 'Close', f'{self.ma1}-day EMA', f'{self.ma2}-day EMA', 'MACD Signal Line', 'MACD Line', 'MACD Histogram', 'Return', 'Cumulative Return', 'MACD Model Return', 'Cumulative MACD Model Return', 'Signal', 'Entry']]), 3)
         if optional_bool:
+            #pd.set_option('display.max_rows', None)
+            #pd.set_option('display.max_columns', None)
+            #pd.set_option('display.width', None)
+            #pd.set_option('display.max_colwidth', None)
             return self.df
         pass
 
     def gen_macd_visual(self, model_days,):
-    #Closing price figure
+        # Closing price figure
         fig1 = plt.figure(figsize=(12, 6))
         plt.grid(True, alpha=0.5)
 
-        plt.plot(self.df.iloc[-model_days:]['Close'])
+        # Use the actual index for x-values
+        x_values = range(len(self.df.iloc[-model_days:]))
 
-    #plot entries and exits
-        plt.plot(self.df[-model_days:].loc[self.df.Entry == 2].index, self.df[-model_days:]['Close'][self.df.Entry == 2], '^', color = 'g', markersize = 10)
-        plt.plot(self.df[-model_days:].loc[self.df.Entry == -2].index, self.df[-model_days:]['Close'][self.df.Entry == -2], 'v', color = 'r', markersize = 10)
+        # Plot the closing prices
+        plt.plot(x_values, self.df.iloc[-model_days:]['Close'], label='Close')
 
-    #plot legend
-        plt.legend(['MACD Signal Line', 'MACD Line', 'MACD Historgram', 'Buy Signal', 'Sell Signal'], loc = 2)
+        #Plot 12 and 26 day EMAs
+        plt.plot(x_values, self.df.iloc[-model_days:][f'{self.ma1}-day EMA'], label=f'{self.ma1}-day EMA') 
+        plt.plot(x_values, self.df.iloc[-model_days:][f'{self.ma2}-day EMA'], label=f'{self.ma2}-day EMA')
 
+        # Plot buy signals (Entry == 2)
+        plt.scatter(
+            [x_values[i] for i in range(len(self.df.iloc[-model_days:])) if self.df.iloc[-model_days:].iloc[i]['Entry'] == 2],
+            self.df.iloc[-model_days:]['Close'][self.df.iloc[-model_days:]['Entry'] == 2],
+            marker='^', color='g', s=100, label='Buy Signal'
+        )
+
+        # Plot sell signals (Entry == -2)
+        plt.scatter(
+            [x_values[i] for i in range(len(self.df.iloc[-model_days:])) if self.df.iloc[-model_days:].iloc[i]['Entry'] == -2],
+            self.df.iloc[-model_days:]['Close'][self.df.iloc[-model_days:]['Entry'] == -2],
+            marker='v', color='r', s=100, label='Sell Signal'
+        )
+    
+        # Plot legend
+        plt.legend(loc=2)
+
+    # Remove x-axis labels
+        plt.gca().xaxis.set_visible(False)
+
+        # Set x-axis labels to the actual trading days
+        plt.xticks(ticks=x_values, labels=x_values, rotation=45)
+    
     #MACD Figure
         fig2 = plt.figure(figsize=(12, 6))
         plt.grid(True, alpha=0.5)
@@ -117,25 +144,34 @@ class MACDTable(Table):
         plt.xticks(ticks=x_values, labels=self.df.iloc[-model_days:].index, rotation=45)
 
     #plotting entry points, .loc for labels
-        plt.plot(
+        plt.scatter(
             [x_values[i] for i in range(len(self.df.iloc[-model_days:])) if self.df.iloc[-model_days:].iloc[i]['Entry'] == 2],
             self.df.iloc[-model_days:]['MACD Signal Line'][self.df.iloc[-model_days:]['Entry'] == 2],
-            '^', color='g', markersize=10, label='Buy Signal'
+            marker='^', color='g', s=100, label='Buy Signal'
         )
 
         # Plot sell signals (Entry == -2)
-        plt.plot(
+        plt.scatter(
             [x_values[i] for i in range(len(self.df.iloc[-model_days:])) if self.df.iloc[-model_days:].iloc[i]['Entry'] == -2],
             self.df.iloc[-model_days:]['MACD Line'][self.df.iloc[-model_days:]['Entry'] == -2],
-            'v', color='r', markersize=10, label='Sell Signal'
+            marker='v', color='r', s=100, label='Sell Signal'
         )
     
     def gen_buyhold_comp(self, ticker):
+        fig1 = plt.figure(figsize=(12, 6))
+        x_values = range(len(self.df))
     #add buy/hold to legend if it doesn't exist
         if f'{ticker} Buy/Hold' not in [line.get_label() for line in plt.gca().get_lines()]:
-            plt.plot(self.df['Cumulative Return'], label=f'{ticker} Buy/Hold')
+            plt.plot(x_values, self.df['Cumulative Return'], label=f'{ticker} Buy/Hold')
     #model plot
-        plt.plot(self.df['Cumulative MACD Model Return'], label=f'{ticker} MACD Model')
+        plt.plot(x_values, self.df['Cumulative MACD Model Return'], label=f'{ticker} MACD Model')
+
+            # Remove x-axis labels
+        plt.gca().xaxis.set_visible(False)
+
+        # Set x-axis labels to the actual trading days
+        plt.xticks(ticks=x_values, labels=x_values, rotation=45)
+
         plt.legend(loc=2)
         plt.grid(True, alpha=.5)
     #print cumulative return if not already printed
