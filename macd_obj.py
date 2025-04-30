@@ -163,8 +163,8 @@ class MACDTable(Table):
 
 #print statements        
         print(f'from {self.df.index[-model_days]} to {self.df.index[-1]}')
-        print(f'count of buy signals: {len(self.df[self.df["Entry"] == 2]) / 2}')
-        print(f'count of sell signals: {len(self.df[self.df["Entry"] == -2]) / 2}')
+        print(f'count of buy signals: {len(self.df[self.df["Entry"] == 2])}')
+        print(f'count of sell signals: {len(self.df[self.df["Entry"] == -2])}')
 
     def gen_buyhold_comp(self, ticker):
         labels = pd.to_datetime(self.df.index).strftime('%Y-%m-%d')
